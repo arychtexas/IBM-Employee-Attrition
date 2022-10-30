@@ -1,0 +1,1958 @@
+# Title
+# Unpacking IBM HR Analytics Employee Attrition & Performance.
+
+# 1. **Dedication:**   
+# This project is dedicated to my two daughters.  Reflect on the important things to gain a better introspective and always move forward.
+
+# 2. **Introduction:**   
+# I will analyze Data Science Job Salaries from Ruchi Bhatia's Kaggle(https://www.kaggle.com/data sets/ruchi798/data-science-job-salaries).  This data set contains salaries of jobs in the Data Science domain.  The data set variable terminology is located in the Data Science Job Salaries Data Set Glossary and Terminology Section.   
+
+## 2.1 **Objective:**  
+# IBM Data Scientists created a fictional data set exploring employee attrition. I will explore each category within the data set and compare and contrast the former workers with the rest of the employees. Eventually, we will categorize the attritted employees and current employees. We will also create a test set to see if we can retain more employees based on "at-risk factors."
+# The data has been downladed from the url: https://www.kaggle.com/data sets/pavansubhasht/ibm-hr-analytics-attrition-data set
+
+## 2.2 **Data Installation:**  
+# Upload following packages and libraries for data exploration. 
+
+library(tidyverse)
+library(caret)
+library(data.table)
+library(RColorBrewer)
+library(rmarkdown)
+library(dslabs)
+library(gtable)
+library(hexbin)
+library(gt)
+library(dplyr)
+library(ggpmisc)
+library(gridExtra)
+library(janitor)
+library(lubridate)
+library(highcharter)
+library(viridisLite)
+library(broom)
+library(scales)
+library(xfun)
+library(htmltools)
+library(mime)
+library(ggfortify)
+library(gtsummary)
+library(tinytex)
+library(vroom)
+library(curl)
+library(gtools)
+library(hrbrthemes)
+library(viridis)
+library(latexpdf)
+library(kableExtra)
+library(knitr)
+library(remotes)
+library(extrafont)
+library(plotrix)
+library(readr)
+library(ggforce)
+
+options(scipen = 999)
+options(timeout = 320)
+gc()
+
+## 2.3 **Data Analysis:**   
+# First, upload the data set.
+
+
+url <- "https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset/download?datasetVersionNumber=1"
+download.file(url, "WA_Fn-UseC_-HR-Employee-Attrition.zip", mode="wb")
+unzip("rWA_Fn-UseC_-HR-Employee-Attrition.zip")
+IBM_Data <- readr::read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
+
+#For chromebook users, if the following doesn't work try:
+
+Tools <- xfun::pkg_load2(c("htmltools", "mime")) 
+Download_Link <- xfun::embed_files(c('Attrition/WA_Fn-UseC_-HR-Employee-Attrition.csv'))
+
+Download_Link
+
+if(interactive() ) htmltools::browsable(Download_Link)
+IBM_Data <- read.csv(
+  'Attrition/WA_Fn-UseC_-HR-Employee-Attrition.csv')
+
+dim(IBM_Data)
+summary(IBM_Data)
+any(is.na(IBM_Data))
+IBM_Data <- IBM_Data[order(IBM_Data$MonthlyIncome),]
+
+# 3. Exploring IBM Employee Structure 
+
+  
+i <- IBM_Data %>% group_by(JobRole) %>% summarise(Freq=n()) 
+ii <- i[order(-i$Freq), ]
+ii
+b <- 237/1470
+percent(b)
+Attrition_Overall <- IBM_Data[which(IBM_Data$Attrition == "Yes"), ]
+oo <- Attrition_Overall %>% group_by(JobRole) %>% summarise(Freq=n()) 
+oot <- oo[order(-oo$Freq), ]
+oot
+df1 <- as_tibble(ii)
+df1 <- df1[order(df1$JobRole), ]
+df1 <- df1 %>% rownames_to_column(var = "key")
+df2 <- as_tibble(oot)
+df2 <- df2[order(df2$JobRole), ]
+df2 <- df2 %>% rownames_to_column(var = "key")
+df_compare <- full_join(df1, df2, by = "key")
+df_compare$AttritionPercentage <- df_compare$Freq.y/df_compare$Freq.x
+df_compare$AttritionPercentage <- format(round(df_compare$AttritionPercentage
+                                               , 2), nsmall = 2)
+df_compare$AttritionPercentage <-as.numeric(df_compare$AttritionPercentage)
+df_compare$AttritionPercentage <- percent(df_compare$AttritionPercentage)
+colnames(df_compare) <- c("Category", "Current Workers", "Current Total", "Former Workers", "Former Total", "Attrition %")
+df_compare = subset(df_compare, select = -c(Category) )
+
+
+  
+df_compare %>%
+  gt() %>%
+  tab_header(
+    title = md("**Current Workers vs. Attrited Workers**"),
+    subtitle = md("Unpacking IBM HR Analytics Employee Attrition & Performance.")
+  ) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+# 4.  **Exploration and Analysis: Comparing Current and Former Workers**
+
+## 4.1 **Age**
+
+Loss <- Attrition_Overall %>% group_by(Age,Gender, WorkLifeBalance, JobSatisfaction, JobRole, MonthlyIncome, StockOptionLevel, YearsSinceLastPromotion, YearsAtCompany) %>% summarise(Freq=n())
+LossPaid <- Loss[order(-Loss$MonthlyIncome), ]
+mean(LossPaid$Age)
+min(LossPaid$Age)
+max(LossPaid$Age)
+w <- LossPaid[which(LossPaid$Age < 34), ]
+nrow(w)
+x <- LossPaid[which(LossPaid$Age < 37), ]
+nrow(x)
+d <- percent(141/237)
+e <- percent(166/237)
+mean(IBM_Data$Age)
+min(IBM_Data$Age)
+max(IBM_Data$Age)
+b <- IBM_Data[which(IBM_Data$Age < 34), ]
+nrow(b)
+f <- percent(574/1470)
+a <- IBM_Data[which(IBM_Data$Age < 37), ]
+nrow(a)
+g <- percent(798/1470)
+
+ge <- tibble(Attrited = c("Attrition Age Min" = 18, "Attrition Age Mean" = 34,
+                          "Attrition Age Max" = 58, "Attrition Age Percentage <34" = d,
+                          "Attrition Age Percentage <37" = e),
+             Employed = c("Employed Age Min" = 18, "Employed Age Mean" = 37,
+                          "Employed Age Max" = 60, "Employed Age Percentage <34" = f,
+                          "Employed Age Percentage <37" = g))
+
+rownames(ge) <- c("Age Min", "Age Mean", "Age Max", "Age Percentage <34",
+                  "Age Percentage <37")
+rownames(ge)
+  
+  
+gt(ge,
+   rowname_col = c("Age Min", "Age Mean", "Age Max", "Age Percentage <34",
+                   "Age Percentage <37"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  tab_options(
+    heading.align = "center",
+    table.font.size = 12,
+    heading.title.font.size = 14,
+    heading.subtitle.font.size = 13
+  ) %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+
+  
+d <- Attrition_Overall %>% group_by(Age) %>% summarise(Freq=n()) 
+dy <- d[order(-d$Freq), ]
+dy
+
+nrow(d)
+dt <- dy[-c(11:39),]
+dt
+    
+
+  
+ggplot(data = dt, aes( x = Age))+
+  geom_bar(aes(y = Freq), stat = "identity", position = "identity", alpha =.7, fill= "red", color= 'blue', show.legend = T)+
+  theme_classic() +
+  labs(
+    title = " Top 10 Attrition by Age  ",
+    subtitle = "Unpacking IBM HR Analytics Employee Attrition & Performance.",
+    caption = "Portions of this data is from the Reference Section. Ages 25 & 27 are not ranked in the top 10",
+    x = "Age",
+    y = "Total Per Age",
+  ) +
+  theme_bw()+
+  theme(legend.title=element_blank(),
+        legend.position = 'bottom',
+        legend.text = element_text(size = 14),
+        axis.text.x.bottom = element_text(margin = margin(t = 8.8, b = 8.8)),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+        axis.text.y = element_text(size = 10),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+        axis.ticks = element_line(colour = "black", size = 1), 
+        panel.border = element_rect(fill = NA, color = "black", size = 1), 
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        plot.caption = element_text(face = "italic", hjust = 0.5))+
+  scale_x_continuous(breaks = c(24:35), 
+                     labels = factor(24:35),
+                     limits = c(23,36)) 
+
+## 4.2 **Business Travel**
+
+Loss1 <- Attrition_Overall
+LossB <- Loss1 %>% group_by( BusinessTravel) %>% summarise(Freq=n())
+table((LossB))
+a <- LossB$TravelPercentage <- percent(LossB$Freq/237)
+a 
+B <- IBM_Data %>% group_by( BusinessTravel) %>% summarise(Freq=n())
+B
+c <- B$TravelPercentage <- percent(B$Freq/1470)
+c
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c("Non-Travel", "Travel Frequently", "Travel Rarely")
+  
+gt(aa,
+     rowname_col = c("Non-Travel", "Travel Frequently", "Travel Rarely"),
+     caption = NULL,
+     rownames_to_stub = TRUE,
+     auto_align = TRUE,
+     id = NULL,
+     locale = NULL
+  ) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.3 **Daily Rate**   
+  
+LossB <- Loss1 %>% group_by(Age, DailyRate) %>% summarise(Freq=n())
+LossB$DailyRatePercentage <- percent(LossB$Freq/237)
+a <- mean(LossB$DailyRate)
+aa <-  scales::dollar(a)
+m <- min(LossB$DailyRate)
+mm <- scales::dollar(m)
+u <- max(LossB$DailyRate)
+uu <- scales::dollar(u)
+w <- LossB[which(LossB$DailyRate < 802.4857), ]
+nrow(w)
+c <- percent(132/237)
+s <- mean(IBM_Data$DailyRate)
+ss <-  scales::dollar(s)
+f <- min(IBM_Data$DailyRate)
+ff <- scales::dollar(f)
+g <- max(IBM_Data$DailyRate)
+gg <- scales::dollar(g)
+B <- IBM_Data %>% group_by(Age, DailyRate) %>% summarise(Freq=n())
+B$DailyRatePercentage <- B$Freq/1470
+B2 <- B[order(-B$DailyRate), ]
+B2
+B2$DailyRatePercentage <- percent((B2$DailyRatePercentage))
+B2
+e <- B2[which(B2$DailyRate < 802.4857), ]
+nrow(e)
+j <- percent(721/1470)
+
+
+dr <- tibble(Attrited = c("Attrition Daily Rate Min" = mm, "Attrition Daily Rate Mean" = aa,
+                          "Attrition Daily Rate Max" = uu, "Attrition Daily Rate % <$802.48" = c),
+             Employed = c("Employed Daily Rate  Min" = ff, "Employed Daily Rate  Mean" = ss,
+                          "Employed Daily Rate  Max" = gg, "Employed Daily Rate  % <$802.48" = j))
+
+rownames(dr) <- c("Daily Rate Min", "Daily Rate Mean", "Daily Rate Max", "Daily Rate Percentage <$802.48")
+rownames(dr)
+  
+gt(dr,
+   rowname_col = c("Daily Rate Min", "Daily Rate Mean", "Daily Rate Max", "Daily Rate Percentage <$802.48"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+
+## 4.4 **Department**   
+  
+LossB <- Loss1 %>% group_by(Department) %>% summarise(Freq=n())
+a <- LossB$DepartmentPercentage <- percent(LossB$Freq/237)
+B <- IBM_Data %>% group_by(Department) %>% summarise(Freq=n())
+c <- B$DepartmentPercentage <- percent(B$Freq/1470)
+LossB
+B
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c("Human Resources", "Research & Development", "Sales")
+
+gt(aa,
+   rowname_col = c("Human Resources", "Research & Development", "Sales"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+## 4.5 **Distance From Home** 
+
+LossB <- Loss1 %>% group_by(DistanceFromHome) %>% summarise(Freq=n())
+LossB$DistanceFromHomePercentage <- LossB$Freq/237
+LossB2 <- LossB[order(-LossB$DistanceFromHomePercentage), ]
+LossB2$DistanceFromHomePercentage <- percent(LossB2$DistanceFromHomePercentage)
+LossB2
+a <- percent(sum(10.97, 11.81, 5.91,3.80,4.22,2.95, 4.64,4.22,7.59, 4.64)/100)
+B <- IBM_Data %>% group_by(DistanceFromHome) %>% summarise(Freq=n())
+B$DistanceFromHomePercentage <- B$Freq/1470
+B2 <- B[order(-B$DistanceFromHomePercentage), ]
+B2$DistanceFromHomePercentage <- percent(B2$DistanceFromHomePercentage)
+B2
+c <- percent(sum(14.354, 14.150, 5.850, 5.782, 5.714, 5.714, 5.442, 4.422, 4.354, 4.014)/100)
+colnames(B2) <- c("EmployedDistanceFromHome", "EmployedFreq", "EmployedDistanceFromHomePercentage")
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- "Living <= 10miles of Company"
+  
+gt(aa,
+   rowname_col = "Living <= 10miles of Company",
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+df <- tibble(LossB2)
+df$EmployedDistanceFromHome <- B2$EmployedDistanceFromHome
+df$EmployedFreq <- B2$EmployedFreq
+df$EmployedDistanceFromHomePercentage <- B2$EmployedDistanceFromHomePercentage
+df
+
+colnames(df) <- c("AttritedDistanceFromHome", "AttritedTotal", "AttritedDistanceFromHomePercentage",
+                  "EmployedDistanceFromHome", "EmployedTotal", "EmployedDistanceFromHomePercentage")
+df
+  
+ggplot(df, aes(x=AttritedDistanceFromHome)) + 
+  geom_area(aes(y=-AttritedTotal, fill="AttritedTotal" )) + 
+  geom_area(aes(y=EmployedTotal, fill="EmployedTotal")) + 
+  labs(title="Distance From Home Comparision: 
+       Former Workers vs. Current Worker", 
+       subtitle="Unpacking IBM HR Analytics Employee Attrition & Performance.", 
+       caption="Portions of this data is from the Reference Section.
+       This chart is inverse to show similarites and differences. All values are positive.", 
+       y="Amount of Personnel",
+       x = "Distance From Home (mi)") + 
+  scale_fill_manual(name="", 
+                    values = c("EmployedTotal"="#00ba38", "AttritedTotal"="#f8766d")) +  
+  theme(panel.grid.minor = element_blank()) +
+  theme_bw()+
+  theme(
+        axis.text.x.bottom = element_text(margin = margin(t = 8.8, b = 8.8)),
+        axis.text.x = element_text(size = 10),
+        axis.title.x = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+        axis.text.y = element_text(size = 10),
+        axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+        axis.ticks = element_line(colour = "black", size = 1), 
+        panel.border = element_rect(fill = NA, color = "black", size = 1), 
+        plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        plot.caption = element_text(face = "italic", hjust = 0.5))
+  
+## 4.6 Education
+
+LossB <- Loss1 %>% group_by(Education) %>% summarise(Freq=n())
+a <- LossB$EducationPercentage <- percent(LossB$Freq/237)
+a
+LossB$EducationType <- c('Below College', 'College', 'Bachelor', 'Master', 'Doctor')
+LossB
+B <- IBM_Data %>% group_by(Education) %>% summarise(Freq=n())
+B$EducationPercentage <- percent(B$Freq/1470)
+c <- B$TravelPercentage <- percent(B$Freq/1470)
+c
+B$EducationType <- c('Below College', 'College', 'Bachelor', 'Master', 'Doctor')
+B
+percent(sum(3.3, 27.1, 38.9, 19.2)/100)
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Below College', 'College', 'Bachelor', 'Master', 'Doctor')
+
+gt(aa,
+   rowname_col = c('Below College', 'College', 'Bachelor', 'Master', 'Doctor'),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.7 **Education Field** 
+
+LossB <- Loss1 %>% group_by(EducationField) %>% summarise(Freq=n())
+a <- LossB$EducationFieldPercentage <- percent(LossB$Freq/237)
+a
+B <- IBM_Data %>% group_by(EducationField) %>% summarise(Freq=n())
+c <- B$EducationFieldPercentage <- percent(B$Freq/1470)
+c
+B
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Human Resources', 'Life Sciences', 'Marketing', 'Medical', 'Other', "Technical Degree")
+  
+gt(aa,
+   rowname_col = c('Human Resources', 'Life Sciences', 'Marketing', 'Medical', 'Other', "Technical Degree"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+## 4.8 **Environment Satisfaction**  
+  
+LossB <- Loss1 %>% group_by(EnvironmentSatisfaction) %>% summarise(Freq=n())
+a <- LossB$EnvironmentSatisfactionPercentage <- percent(LossB$Freq/237)
+LossB$EnvironmentSatisfactionType <- c('Low', 'Medium', 'High', 'Very High')
+e <- mean((LossB$EnvironmentSatisfaction))
+B <- IBM_Data %>% group_by(EnvironmentSatisfaction) %>% summarise(Freq=n())
+c <- B$EnvironmentSatisfactionPercentage <- percent(B$Freq/1470)
+B$EnvironmentSatisfactionType <- c('Low', 'Medium', 'High', 'Very High')
+B
+f <- mean((B$EnvironmentSatisfaction))
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Low', 'Medium', 'High', 'Very High')
+  
+gt(aa,
+   rowname_col = c('Low', 'Medium', 'High', 'Very High'),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.9 **Gender**
+  
+M <- tibble(Attrition_Overall$Age, Attrition_Overall$Gender)
+colnames(M) <- c('Age', "Gender")
+table(M$Age)
+
+NM <- M %>% filter(Gender == "Male")
+
+MM <- ggplot(NM, aes(x = Age)) + 
+  geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+  geom_density(lwd = 1, colour = 4,
+               fill = 4, alpha = 0.25)+ 
+  labs(title="Male Attrition", 
+       subtitle="Based on Age", 
+       caption="Portions of this data is from the Reference Section.",
+       y="Amount of Personnel (density)",
+       x = "Age") +
+  theme_bw()+
+  theme(
+    axis.text.x.bottom = element_text(margin = margin(t = 8.8, b = 8.8)),
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.text.y = element_text(size = 10),
+    axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.ticks = element_line(colour = "black", size = 1), 
+    panel.border = element_rect(fill = NA, color = "black", size = 1), 
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.5))+
+  scale_y_continuous(
+    "Density", 
+    sec.axis = sec_axis(~ . * 250, name = "Amount of Personnel")
+  )
+
+MM
+W <- M %>% filter(Gender == "Female")
+
+WF <- ggplot(W, aes(x = Age)) + 
+  geom_histogram(aes(y = ..density..),
+                 colour = 1, fill = "white") +
+  geom_density(lwd = 1, colour = 2,
+               fill = 2, alpha = 0.25)+ 
+  labs(title="Female Attrition ", 
+       subtitle="Based on Age.", 
+       caption="Portions of this data is from the Reference Section.",
+       y="Amount of Personnel (density)",
+       x = "Age") +
+  theme_bw()+
+  theme(
+    axis.text.x.bottom = element_text(margin = margin(t = 8.8, b = 8.8)),
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.text.y = element_text(size = 10),
+    axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.ticks = element_line(colour = "black", size = 1), 
+    panel.border = element_rect(fill = NA, color = "black", size = 1), 
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.5))+
+  scale_y_continuous(
+    "Density", 
+    sec.axis = sec_axis(~ . * 250, name = "Amount of Personnel")
+  )
+  
+  
+grid.arrange(MM, WF, ncol = 2 )
+  
+MMT <- M %>% group_by(Age,Gender) %>% summarise(Freq=n()) %>% filter(Gender == "Male")
+Y <- MMT[order(-MMT$Freq), ]
+nrow(Y)
+New_MMT <- Y[-c(6:38),]
+New_MMT
+
+FMT <- M %>% group_by(Age,Gender) %>% summarise(Freq=n()) %>% filter(Gender == "Female")
+Z <- FMT[order(-FMT$Freq), ]
+nrow(Z)
+New_FMT <- Z[-c(6:32),]
+New_FMT
+
+df1 <- as_tibble(New_FMT)
+df1 <- df1 %>% rownames_to_column(var = "key")
+df2 <- as_tibble(New_MMT)
+df2 <- df2 %>% rownames_to_column(var = "key")
+df_compare <- full_join(df1, df2, by = "key")
+df_compare$AttritionPercentage <- df_compare$Freq.y/df_compare$Freq.x
+df_compare$AttritionPercentage <- format(round(df_compare$AttritionPercentage
+                                               , 2), nsmall = 2)
+df_compare$AttritionPercentage <-as.numeric(df_compare$AttritionPercentage)
+df_compare$AttritionPercentage <- percent(df_compare$AttritionPercentage)
+colnames(df_compare)
+df_compare
+colnames(df_compare) <- c("Category", "Female Age", "Female_Worker", "Total Female Workers", "Male Age", "Male_Worker", "Total Male Workers", "AttritionPercentage")
+df_compare = subset(df_compare, select = -c(Category, Female_Worker, Male_Worker, AttritionPercentage) )
+  
+  
+df_compare %>%
+  gt()%>%
+  tab_header(
+    title = md("**Attrition Comparision: 
+               Male vs. Female Worker**"),
+    subtitle = md("Unpacking IBM HR Analytics Employee Attrition & Performance."),
+  ) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.10 Hourly Rate  
+LossB <- Loss1 %>% group_by(Age, HourlyRate) %>% summarise(Freq=n())
+LossB$HoulryRatePercentage <- percent(LossB$Freq/237)
+a <- min(LossB$HourlyRate)
+ab <-scales::dollar(a)
+c <- round(mean(LossB$HourlyRate))
+cc <- scales::dollar(c)
+d <- max(LossB$HourlyRate)
+dd <- scales::dollar(d)
+LossB[which(LossB$HourlyRate < 65.89116), ]
+e <- percent(111/237)
+f <- min(IBM_Data$HourlyRate)
+ff <- scales::dollar(f)
+g <- round(mean(IBM_Data$HourlyRate))
+gg <- scales::dollar(g)
+h <- max(IBM_Data$HourlyRate)
+hh<- scales::dollar(h)
+B <- IBM_Data %>% group_by(Age, HourlyRate) %>% summarise(Freq=n())
+B$HourlyRatePercentage <- B$Freq/1470
+B2 <- B[order(-B$HourlyRate), ]
+B2
+B2$HourlyRatePercentage <- percent((B2$HourlyRatePercentage))
+B2
+B2[which(B2$HourlyRate < 65.89116), ]
+i <- percent(538/1470)
+
+dr <- tibble(Attrited = c("Attrition Hourly Rate Min" = ab, "Attrition Hourly Rate Mean" = cc,
+                          "Attrition Hourly Rate Max" = dd, "Attrition Hourly Rate % <$65.89116" = e),
+             Employed = c("Employed Hourly Rate  Min" = ff, "Employed Hourly Rate  Mean" = gg,
+                          "Employed Hourly Rate  Max" = hh, "Employed Hourly Rate  % <$65.89116" = i))
+
+rownames(dr) <- c("Hourly Rate Min", "Hourly Rate Mean", "Hourly Rate Max", "Hourly Rate Percentage <$66")
+rownames(dr)
+  
+gt(dr,
+   rowname_col = c("Hourly Rate Min", "Hourly Rate Mean", "Hourly Rate Max", "Hourly Rate Percentage <$66"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+## 4.11 **Job Involvement**
+  
+LossB <- Loss1 %>% group_by(JobInvolvement) %>% summarise(Freq=n())
+a <- LossB$JobInvolvementPercentage <- percent(LossB$Freq/237)
+LossB$JobInvolvementRank <- c('Low', 'Medium', 'High', 'Very High')
+LossB
+B <- IBM_Data %>% group_by(JobInvolvement) %>% summarise(Freq=n())
+c <- B$JobInvolvementPercentage <- percent(B$Freq/1470)
+B$JobInvolvementRank <- c('Low', 'Medium', 'High', 'Very High')
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Low', 'Medium', 'High', 'Very High')
+
+gt(aa,
+   rowname_col = c('Low', 'Medium', 'High', 'Very High'),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+    
+## 4.12 **Job Level**
+  
+LossB <- Loss1 %>% group_by(JobLevel) %>% summarise(Freq=n())
+a <- LossB$JobLevelPercentage <- percent(LossB$Freq/237)
+LossB
+B <- IBM_Data %>% group_by(JobLevel) %>% summarise(Freq=n())
+c <- B$JobLevelPercentage <- percent(B$Freq/1470)
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('One', 'Two', 'Three', 'Four', 'Five')
+  
+gt(aa,
+   rowname_col = c('One', 'Two', 'Three', 'Four', "Five"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.13 **Job Role**
+  
+a <- table(IBM_Data$JobRole)
+b <- table(Attrition_Overall$JobRole)
+a
+aa <- as.numeric(a)
+bb <- as.numeric(b)
+
+percent(bb/aa)
+c <- tibble(Jobtitle = c("Healthcare Representative", "Human Resources", 
+                         "Laboratory Technician", "Manager", "Manufacturing Director",
+                         "Research Director", "Research Scientist", "Sales Executive" , 
+                         "Sales Representative"), "Attrition Percentage" = c("6.870%", "23.077%", "23.938%", 
+                                                                             "4.902%",  "6.897%",  "2.500%",
+                                                                             "16.096%", "17.485%", "39.759%"))
+c
+
+percent(aa/1470)
+
+e <- tibble(Jobtitle = c("Healthcare Representative", "Human Resources", 
+                         "Laboratory Technician", "Manager", "Manufacturing Director",
+                         "Research Director", "Research Scientist", "Sales Executive" , 
+                         "Sales Representative"), "All Workers Percentage" = c("8.91%", "3.54%", "17.62%", 
+                                                                               "6.94%",  "9.86%",  "5.44%",
+                                                                               "19.86%", "22.18%", "5.65%"))
+e
+
+df3 <- as_tibble(c)
+df3 <- df3 %>% rownames_to_column(var = "key")
+df4 <- as_tibble(e)
+colnames(df4)
+df4 <- df4 %>% rownames_to_column(var = "key")
+df_compare1 <- full_join(df3, df4, by = "key")
+colnames(df_compare1) <- c("Sequence", "Attrition Jobtitle ", "Attrition %", "Jobtitle", "Current Workers %")
+df_compare1 = subset(df_compare1, select = -c(Sequence) )
+  
+df_compare1 %>%
+  gt()%>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+qplot(IBM_Data$JobRole) +
+  labs(
+    title =  "Current Worker Job Role ",
+    subtitle = "Unpacking IBM HR Analytics Employee Attrition & Retention",
+    caption = "Portions of this data is from the Reference Section.",
+    x = "Job Title",
+    y = "Total Filled",
+  )+
+  theme_classic()+
+  theme(
+    legend.position = 'none',
+    axis.text.x = element_text(size = 10, angle = 90, vjust = .4, hjust= .4),
+    axis.title.x = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.text.y = element_text(size = 10),
+    axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.ticks = element_line(colour = "black", size = 1), 
+    panel.border = element_rect(fill = NA, color = "black", size = 1), 
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.5))+
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE))
+
+qplot(Attrition_Overall$JobRole)+
+  labs(
+    title =  "Former Worker Job Role ",
+    subtitle = "Unpacking IBM HR Analytics Employee Attrition & Retention",
+    caption = "Portions of this data is from the Reference Section.",
+    x = "Job Title",
+    y = "Total Filled",
+  )+
+  theme_classic()+
+  theme(
+    legend.position = 'none',
+    axis.text.x = element_text(size = 10, angle = 90, vjust = .4, hjust= .4),
+    axis.title.x = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.text.y = element_text(size = 10),
+    axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l = 0), size = 14),
+    axis.ticks = element_line(colour = "black", size = 1), 
+    panel.border = element_rect(fill = NA, color = "black", size = 1), 
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.5))+
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE))
+
+## 4.14 **Job Satisfaction**
+  
+LossB <- Loss1 %>% group_by(JobSatisfaction) %>% summarise(Freq=n())
+a <- LossB$JobLevelPercentage <- percent(LossB$Freq/237)
+LossB
+B <- IBM_Data %>% group_by(JobSatisfaction) %>% summarise(Freq=n())
+c <- B$JobLevelPercentage <- percent(B$Freq/1470)
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Low', 'Medium', 'High', 'Very High')
+  
+gt(aa,
+   rowname_col = c('Low', 'Medium', 'High', 'Very High'),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+## 4.15 **Marital Status** 
+  
+LossB <- Loss1 %>% group_by(MaritalStatus) %>% summarise(Freq=n())
+a <- LossB$MaritalStatusPercentage <- percent(LossB$Freq/237)
+LossB
+B <- IBM_Data %>% group_by(MaritalStatus) %>% summarise(Freq=n())
+c <- B$MaritalStatusPercentage <- percent(B$Freq/1470)
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Divorced', 'Married', 'Single')
+  
+gt(aa,
+   rowname_col = c('Divorced', 'Married', 'Single'),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+## 4.16 **Monthly Income**
+  
+a <- mean(LossPaid$MonthlyIncome)
+aa <-  scales::dollar(a)
+m <- min(LossPaid$MonthlyIncome)
+mm <- scales::dollar(m)
+u <- max(LossPaid$MonthlyIncome)
+uu <- scales::dollar(u)
+LossPaid[which(LossPaid$MonthlyIncome < 6502.931), ]
+c <- percent(185/237)  
+s <- mean(IBM_Data$MonthlyIncome)
+ss <-  scales::dollar(s)
+f <- min(IBM_Data$MonthlyIncome)
+ff <- scales::dollar(f)
+g <- max(IBM_Data$MonthlyIncome)
+gg <- scales::dollar(g)
+IBM_Data[which(IBM_Data$MonthlyIncome < 6502.931), ]
+nrow(a)
+j <- percent(977/1470) 
+
+dr <- tibble(Attrited = c("Attrition Monthly Income Min" = mm, "Attrition Monthly Income Mean" = aa,
+                          "Attrition Monthly Income Max" = uu, "Attrition Monthly Income % <$802.48" = c),
+             Employed = c("Employed Monthly Income Min" = ff, "Employed Monthly Income  Mean" = ss,
+                          "Employed Monthly Income  Max" = gg, "Employed Monthly Income  % <$802.48" = j))
+
+rownames(dr) <- c("Monthly Income Min", "Monthly Income Mean", "Monthly Income Max", "Monthly Income % <$802.48")
+rownames(dr)
+  
+gt(dr,
+   rowname_col = c("Monthly Income Min", "Monthly Income Mean", "Monthly Income Max", "Monthly Income % <$802.48"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+## 4.17  **Monthly Rate**
+  
+a <- mean(Loss1$MonthlyRate)
+aa <-  scales::dollar(a)
+m <- min(Loss1$MonthlyRate)
+mm <- scales::dollar(m)
+u <- max(Loss1$MonthlyRate)
+uu <- scales::dollar(u)
+Loss1[which(Loss1$MonthlyRate < 14313.1), ]
+percent(115/237)
+IBM_Data[which(IBM_Data$MonthlyRate < 14313.1), ]
+c <- percent(185/237)  
+s <- mean(IBM_Data$MonthlyRate)
+ss <-  scales::dollar(s)
+f <- min(IBM_Data$MonthlyRate)
+ff <- scales::dollar(f)
+g <- max(IBM_Data$MonthlyRate)
+gg <- scales::dollar(g)
+j <- percent(740/1470)
+
+dr <- tibble(Attrited = c("Attrition Monthly Rate Min" = mm, "Attrition Monthly Rate Mean" = aa,
+                          "Attrition Monthly Rate Max" = uu, "Attrition Monthly Rate % <$802.48" = c),
+             Employed = c("Employed Monthly Rate Min" = ff, "Employed Monthly Rate  Mean" = ss,
+                          "Employed Monthly Rate  Max" = gg, "Employed Monthly Rate  % <$802.48" = j))
+
+rownames(dr) <- c("Monthly Rate Min", "Monthly Rate Mean", "Monthly Rate Max", "Monthly Rate % <$802.48")
+rownames(dr)
+  
+gt(dr,
+   rowname_col = c("Monthly Rate Min", "Monthly Rate Mean", "Monthly Rate Max", "Monthly Rate % <$802.48"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.18 **Number of Companies Worked**      
+  
+LossB <- Loss1 %>% group_by(NumCompaniesWorked) %>% summarise(Freq=n())
+a <- LossB$NumCompaniesWorkedPercentage <- percent(LossB$Freq/237)
+a
+LossB
+B <- IBM_Data %>% group_by(NumCompaniesWorked) %>% summarise(Freq=n())
+c <- B$NumCompaniesWorkedPercentage <- percent(B$Freq/1470)
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Zero', 'One', 'Two', 'Three', 'Four', 'Five', "Six", "Seven", "Eight", "Nine")
+
+  
+gt(aa,
+   rowname_col = c('Zero', 'One', 'Two', 'Three', 'Four', 'Five', "Six", "Seven", "Eight", "Nine"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+# 4.19 **Workers Under the Age of 18**                  
+
+table(IBM_Data$Over18 <18)
+
+# All workers were 18 and older
+
+## 4.20 **Overtime**               
+  
+table(Loss1$OverTime)
+a <-percent(127/237)
+table(IBM_Data$OverTime)
+c <- percent(416/1470)
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c("Worked Overtime")
+  
+gt(aa,
+   rowname_col = c("Worked Overtime"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+## 4.21 **Percent Salary Hike**      
+  
+LossB <- Loss1 %>% group_by(PercentSalaryHike) %>% summarise(Freq=n())
+a <- LossB$PercentSalaryHikePercentage <- percent(LossB$Freq/237)
+LossB
+percent(sum(17.30, 13.93, 14.35, 10.13, 7.59)/100)
+B <- IBM_Data %>% group_by(PercentSalaryHike) %>% summarise(Freq=n())
+c <- B$PercentSalaryHikePercentage <- percent(LossB$Freq/1470)
+B
+percent(sum(14.286, 13.469, 14.218, 13.673, 6.871)/100)
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Eleven %', 'Twelve %', 'Thirteen %', 'Fourteen %', 'Fifteen %',
+                  'Sixteen %', "Seventeen %", "Eighteen %", "Nineteen %", "Twenty %",
+                  "Twenty One %", "Twenty Two %", "Twenty Three %","Twenty Four %", 
+                  "Twenty Five %" )
+  
+gt(aa,
+   rowname_col = c('Eleven %', 'Twelve %', 'Thirteen %', 'Fourteen %', 'Fifteen %',
+                   'Sixteen %', "Seventeen %", "Eighteen %", "Nineteen %", "Twenty %",
+                   "Twenty One %", "Twenty Two %", "Twenty Three %","Twenty Four %", 
+                   "Twenty Five %" ),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+## 4.22 **Performance Rating**  
+    
+LossB <- Loss1 %>% group_by(PerformanceRating) %>% summarise(Freq=n())
+a <- LossB$PerformanceRatingPercentage <- percent(LossB$Freq/237)
+LossB$PerformanceRatingRank <- c('Excellent', 'Outstanding')
+LossB
+B <- IBM_Data %>% group_by(PerformanceRating) %>% summarise(Freq=n())
+c <- B$PerformanceRatingPercentage <- percent(B$Freq/1470)
+B$PerformanceRatingRank <- c('Excellent', 'Outstanding')
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Excellent', 'Outstanding')
+
+gt(aa,
+   rowname_col = c('Excellent', 'Outstanding' ),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.23 **Relationship Satisfaction** 
+  
+LossB <- Loss1 %>% group_by(RelationshipSatisfaction) %>% summarise(Freq=n())
+a <- LossB$RelationshipSatisfactionPercentage <- percent(LossB$Freq/237)
+LossB$RelationshipSatisfaction <- c('Low', 'Medium', 'High', 'Very High')
+LossB
+B <- IBM_Data %>% group_by(RelationshipSatisfaction) %>% summarise(Freq=n())
+c <- B$RelationshipSatisfactionPercentage <- percent(B$Freq/1470)
+B$RelationshipSatisfaction <- c('Low', 'Medium', 'High', 'Very High')
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c('Low', 'Medium', 'High', 'Very High')
+
+gt(aa,
+   rowname_col = c('Low', 'Medium', 'High', 'Very High'),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.24 **Standard Hours**           
+  
+LossB <- Loss1 %>% group_by(StandardHours) %>% summarise(Freq=n())
+a <- LossB$StandardHoursPercentage <- percent(LossB$Freq/237)
+LossB
+B <- IBM_Data %>% group_by(StandardHours) %>% summarise(Freq=n())
+c <- B$StandardHoursPercentage <- percent(B$Freq/1470)
+B
+
+aa <- tibble(Attrited = a, Employed = c)
+rownames(aa) <- c("Worked an 80 Hour Week")
+
+gt(aa,
+   rowname_col = c("Worked Overtime"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.25 **Stock Option Level**
+  
+mm <-min(LossPaid$StockOptionLevel)
+aa<- round(mean(LossPaid$StockOptionLevel))
+uu <-max(LossPaid$StockOptionLevel)
+LossPaid[which(LossPaid$StockOptionLevel < 1), ]
+c <- percent(154/237)
+ff <- min(IBM_Data$StockOptionLevel)
+ss <- round(mean(IBM_Data$StockOptionLevel))
+gg <-max(IBM_Data$StockOptionLevel)
+a <- IBM_Data[which(LossPaid$StockOptionLevel < 1), ]
+nrow(a)
+j <-percent(154/1470)
+
+dr <- tibble(Attrited = c("Attrition Stock Option Level Min" = mm, "Attrition Stock Option Level Mean" = aa,
+                          "Attrition Stock Option Level Max" = uu, "Attrition Stock Option Level %" = c),
+             Employed = c("Employed Stock Option Level Min" = ff, "Employed Stock Option Level Mean" = ss,
+                          "Employed Stock Option Level Max" = gg, "Employed Stock Option Level % " = j))
+
+rownames(dr) <- c("Stock Option Level Min", "Stock Option Level Mean", "Stock Option Level Max", "Stock Option Level <1 %")
+rownames(dr)
+
+gt(dr,
+   rowname_col = c("Stock Option Level Min", "Stock Option Level Mean", "Stock Option Level Max", "Stock Option Level %"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 4.26 **Total Working Years**      
+  
+LossB <- Loss1 %>% group_by(TotalWorkingYears) %>% summarise(Freq=n())
+LossB2 <- LossB[order(-LossB$Freq), ]
+LossB2$TotalWorkingYearsPercentage <- percent(LossB2$Freq/237)
+dt <- LossB2[-c(11:40),]
+colnames(dt) <- c( 'Attrited Work Years', "Total", "%")
+B <- IBM_Data%>% group_by(TotalWorkingYears) %>% summarise(Freq=n())
+B2 <- B[order(-B$Freq), ]
+B2$TotalWorkingYearsPercentage <- percent(B2$Freq/1470)
+dy <- B2[-c(11:40),]
+colnames(dy) <- c( 'Employed Work Years', "Sum", "Employed %")
+aa <- tibble(dt, dy)
+
+aa%>%
+  gt()%>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+
+
+## 4.27 Training Times Last Year   
+  
+LossB <- Loss1 %>% group_by(TrainingTimesLastYear) %>% summarise(Freq=n())
+LossB2 <- LossB[order(-LossB$Freq), ]
+LossB2$TrainingTimesLastYearPercentage <- percent(LossB2$Freq/237)
+colnames(LossB2) <- c("Attrited Training Hours", "Total", "Training %") 
+B <- IBM_Data %>% group_by(TrainingTimesLastYear) %>% summarise(Freq=n())
+B2 <- B[order(-B$Freq), ]
+B2$TrainingTimesLastYearPercentage <- percent(B2$Freq/1470)
+colnames(B2) <- c("Current Employee Training Hours", "Total", "Training %") 
+  
+
+#**Attrited Worker** 
+    
+LossB2
+  
+#**Current Worker** 
+    
+B2
+
+## 4.28 **Work life Balance**
+  
+aa <- round(mean(LossPaid$WorkLifeBalance))
+mm <-min(LossPaid$WorkLifeBalance)
+uu <-max(LossPaid$WorkLifeBalance)
+LossPaid[which(LossPaid$WorkLifeBalance < 2.76), ]
+c <-percent(83/237)
+IBM_Data[which(IBM_Data$WorkLifeBalance < 2.76), ]
+ss <- round(mean(IBM_Data$WorkLifeBalance))
+ff <- min(IBM_Data$WorkLifeBalance)
+gg <- max(IBM_Data$WorkLifeBalance)
+j <- percent(424/1470)
+
+dr <- tibble(Attrited = c("Attrition Work life Balance Min" = mm, "Attrition Work life Balance Mean" = aa,
+                          "Attrition Work life Balance Max" = uu, "Attrition Work life Balance % <$802.48" = c),
+             Employed = c("Employed Work life Balance  Min" = ff, "Employed Work life Balance  Mean" = ss,
+                          "Employed Work life Balance  Max" = gg, "Employed Work life Balance  % <$802.48" = j))
+
+rownames(dr) <- c("Work life Balance Min", "Work life Balance Mean", "Work life Balance Max", "Work life Balance %")
+rownames(dr)
+  
+gt(dr,
+   rowname_col = c("Work life Balance Min", "Work life Balance Mean", "Work life Balance Max", "Work life Balance %"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+## 4.29 Years At Company
+aa <-round(mean(LossPaid$YearsAtCompany))
+mm <-min(LossPaid$YearsAtCompany)
+uu <-max(LossPaid$YearsAtCompany)
+LossPaid[which(LossPaid$YearsAtCompany < 5.14), ]
+LossPaid[which(LossPaid$YearsAtCompany < 7.01), ]
+c <- percent(162/237)
+d <- percent(182/237)
+ss<- round(mean(IBM_Data$YearsAtCompany))
+ff <-min(IBM_Data$YearsAtCompany)
+gg <-max(IBM_Data$YearsAtCompany)
+a<- IBM_Data[which(IBM_Data$YearsAtCompany < 5.14), ]
+b<- IBM_Data[which(IBM_Data$YearsAtCompany < 7.01), ]
+nrow(a)
+nrow(b)
+e <- percent(776/1470)
+j <- percent(942/1470)
+
+dr <- tibble(Attrited = c("Attrition Years At Company Min" = mm, "Attrition Years At Company Mean" = aa,
+                          "Attrition Years At Company Max" = uu, "Attrition Years At Company % <5.14" = c,
+                          "Attrition Years At Company % <7.01" = d),
+             Employed = c("Employed Years At Company  Min" = ff, "Employed Years At Company  Mean" = ss,
+                          "Employed Years At Company  Max" = gg, "Employed Years At Company  % <5.14" = e,
+                          "Employed Years At Company  % <7.01" = j))
+
+rownames(dr) <- c("Years At Company Min", "Years At Company Mean", "Years At Company Max", "Years At Company Percentage <5.14",
+                  "Years At Company Percentage <7.01")
+rownames(dr)
+
+gt(dr,
+   rowname_col = c("Years At Company Min", "Years At Company Mean", "Years At Company Max", "Years At Company Percentage <5.14",
+                   "Years At Company Percentage <7.01"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+
+## 4.30 **Years in Current Role** 
+
+aa <-round(mean(Attrition_Overall$YearsInCurrentRole))
+mm <-min(Attrition_Overall$YearsInCurrentRole)
+uu <-max(Attrition_Overall$YearsInCurrentRole)
+a <- Attrition_Overall[which(Attrition_Overall$YearsInCurrentRole < 2.90), ]
+b <- Attrition_Overall[which(Attrition_Overall$YearsInCurrentRole < 4.23), ]
+nrow(a)
+nrow(b)
+c <- percent(152/237)
+d <- percent(183/237)
+z <-IBM_Data[which(IBM_Data$YearsInCurrentRole < 2.90), ]
+y <- IBM_Data[which(IBM_Data$YearsInCurrentRole < 4.23), ]
+nrow(z)
+nrow(y)
+ss <-round(mean(IBM_Data$YearsInCurrentRole))
+mm <-min(IBM_Data$YearsInCurrentRole)
+uu <-max(IBM_Data$YearsInCurrentRole)
+e <- percent(912/1470)
+j <- percent(912/1470)
+
+dr <- tibble(Attrited = c("Attrition Years in Current Role   Min" = mm, "Attrition Years in Current Role   Mean" = aa,
+                          "Attrition Years in Current Role   Max" = uu, "Attrition Years in Current Role   % <2.90" = c,
+                          "Attrition Years in Current Role   % <4.23" = d),
+             Employed = c("Employed Years in Current Role    Min" = ff, "Employed Years in Current Role    Mean" = ss,
+                          "Employed Years in Current Role    Max" = gg, "Employed Years in Current Role    % <2.90" = e,
+                          "Employed Years in Current Role    % <4.23" = j))
+
+rownames(dr) <- c("Years in Current Role   Min", "Years in Current Role   Mean", "Years in Current Role   Max", "Years in Current Role   Percentage <2.90",
+                  "Years in Current Role   Percentage <4.23")
+rownames(dr)
+  
+gt(dr,
+   rowname_col = c("Years in Current Role   Min", "Years in Current Role   Mean", "Years in Current Role   Max", "Years in Current Role   Percentage <5.14",
+                   "Years in Current Role   Percentage <7.01"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+## 4.31 Years With Current Manager
+LossB <- Loss1 %>% group_by(YearsWithCurrManager) %>% summarise(Freq=n())
+LossB2 <- LossB[order(-LossB$Freq), ]
+LossB2
+LossB2$YearsWithCurrManagerPercentage <- percent(LossB2$Freq/237)
+a <- LossB2
+colnames(a) <- c( "Attrited Worker", "Total", "Attrited %")
+B <- IBM_Data %>% group_by(YearsWithCurrManager) %>% summarise(Freq=n())
+B2 <- B[order(-B$Freq), ]
+B2
+B2 <- B2[-c(14:18),]
+B2$YearsWithCurrManagerPercentage <- percent(B2$Freq/1470)
+c <- B2
+colnames(c) <- c( "Current Worker", "Current Total", "Employed %")
+aa <- tibble(a, c)
+  
+  
+aa %>%
+  gt() %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything()) %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+## 4.32 **Years Since Last Promotion**
+
+  
+aa <-round(mean(LossPaid$YearsSinceLastPromotion))
+mm <-min(LossPaid$YearsSinceLastPromotion)
+uu <-max(LossPaid$YearsSinceLastPromotion)
+LossPaid[which(LossPaid$YearsSinceLastPromotion > 2), ]
+c <- percent(51/237)
+IBM_Data[which(IBM_Data$YearsSinceLastPromotion > 2), ]
+ss <-round(mean(IBM_Data$YearsSinceLastPromotion))
+ff <-min(IBM_Data$YearsSinceLastPromotion)
+gg <-max(IBM_Data$YearsSinceLastPromotion)
+j<- percent(373/1470)
+
+dr <- tibble(Attrited = c("Attrition Years Since Last Promotion Min" = mm, "Attrition Years Since Last Promotion Mean" = aa,
+                          "Attrition Years Since Last Promotion Max" = uu, "Attrition Years Since Last Promotion % <2" = c),
+             Employed = c("Employed Years Since Last Promotion  Min" = ff, "Employed Years Since Last Promotion  Mean" = ss,
+                          "Employed Years Since Last Promotion  Max" = gg, "Employed Years Since Last Promotion  % <2" = j))
+
+rownames(dr) <- c("Years Since Last Promotion Min", "Years Since Last Promotion Mean", "Years Since Last Promotion Max", "Years Since Last Promotion Percentage <2")
+rownames(dr)
+  
+  
+gt(dr,
+   rowname_col = c("Years Since Last Promotion Min", "Years Since Last Promotion Mean", "Years Since Last Promotion Max", "Years Since Last Promotion Percentage <2"),
+   caption = NULL,
+   rownames_to_stub = TRUE,
+   auto_align = TRUE,
+   id = NULL,
+   locale = NULL
+) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())  %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+
+  
+## 4.33 **Review of IBM Categories** 
+
+  
+final_chart <- tibble(Attrited = c("Age","BusinessTravel", "DailyRate","Department", "DistanceFromHome", "Education", "EducationField", "EnvironmentSatisfaction", "HourlyRate", "JobInvolvement",  "JobLevel",  "JobSatisfaction", "MaritalStatus", "MonthlyIncome", "MonthlyRate","NumCompaniesWorked",  "Over18", "OverTime", "PercentSalaryHike", "PerformanceRating", "RelationshipSatisfaction", "StandardHours", "StockOptionLevel", "TotalWorkingYears",  "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany",  "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager"), 
+                      Employed= c("Age","BusinessTravel", "DailyRate","Department", "DistanceFromHome", "Education", "EducationField", "EnvironmentSatisfaction", "HourlyRate", "JobInvolvement",  "JobLevel",  "JobSatisfaction", "MaritalStatus", "MonthlyIncome", "MonthlyRate","NumCompaniesWorked",  "Over18",   "OverTime", "PercentSalaryHike", "PerformanceRating", "RelationshipSatisfaction", "StandardHours", "StockOptionLevel", "TotalWorkingYears",  "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany",  "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager"),
+                      Attrition_Stats = c(59, 66, 56, 56, 61, 89.6, 37, 30.38, 
+                                          47, 52.7, 60, 30.8, 51, 78, 49, 41, 
+                                          100, 54, 63, 84, 57, 100, 65, 16, 
+                                          41.35, 35, 77,  64, 22, 35.86),
+                      Employed_Stats = c(54, 71, 49, 65, 70, 88.5, 41.2, 19.32,
+                                         37, 59, 36, 31.22, 32, 66, 50, 35,  100,
+                                         27, 63, 85, 60.6, 100, 10, 13.741,  37, 
+                                         29, 67,  62, 25, 17.89))
+
+final_chart[order(final_chart$Attrition_Stats), ]
+a <- final_chart
+a$Attrition_Stats <- percent(a$Attrition_Stats/100)
+a$Employed_Stats <- percent(a$Employed_Stats/100)
+  
+a %>%
+  gt()%>%
+  tab_header(
+    title = md("**Retained vs. Attrited Employees Comparision**"),
+    subtitle = md("Unpacking IBM HR Analytics Employee Attrition & Retention")
+  ) %>%
+  cols_width(
+    everything() ~ px(200)) %>%
+  tab_source_note(
+    source_note = md("Portions of this data is from the Reference Section.")
+  ) %>%
+  opt_table_font(
+    font = "Times New Roman",
+    weight = 300) %>%
+  cols_align(
+    align = "center",
+    columns = everything()) %>% 
+  tab_options(
+    table.background.color = "lightyellow1")
+  
+awc <- final_chart %>% ggplot(aes(x= Attrited, fill=Attrition_Stats, y=Attrition_Stats))+
+  geom_bar(position="dodge", stat="identity")+
+  coord_flip()+
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE))+
+  theme_classic() +
+  labs(
+    title = " Attrited Worker",
+    caption = "Some data is from the Ref. Section.",
+    x = "Category",
+    y = "Total")+
+  theme_bw()+
+  theme(
+    legend.position = 'none',
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.5))
+
+cwc <- final_chart %>% ggplot(aes(x= Employed, fill=Employed_Stats, y=Employed_Stats))+
+  geom_bar(position="dodge", stat="identity")+
+  coord_flip()+
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE))+
+  theme_classic() +
+  labs(
+    title = " Current Worker",
+    caption = "Some data is from the Ref. Section.",
+    x = "Category",
+    y = "Total")+
+  theme_bw()+
+  theme(
+    legend.position = 'none',
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption = element_text(face = "italic", hjust = 0.5))
+  
+
+  
+grid.arrange(awc, cwc, ncol = 2 )
+  
+
+# 5. **Tackling Attrition**
+
+## 5.1 **Defining Each Category of Worker**
+  
+IBM_Data = subset(IBM_Data, select =- c(HourlyRate, DailyRate, MonthlyRate, Over18))
+
+colnames(IBM_Data)
+
+Cat_Red <- IBM_Data[which(IBM_Data$Attrition == "Yes"), ]
+nrow(Cat_Red)
+
+Cat_Yellow <- IBM_Data %>% filter(Age <= 37,
+                                  Attrition == "No",
+                                  YearsWithCurrManager <= 2,
+                                  YearsInCurrentRole <= 4,
+                                  YearsAtCompany <= 7,
+                                  StockOptionLevel <= 1,
+                                  MonthlyIncome < 6502.931,
+                                  JobLevel <= 2,
+                                  BusinessTravel == "Travel_Rarely")
+
+nrow(Cat_Yellow)
+
+Cat_Green <- IBM_Data %>% filter(Attrition == "No",
+                                 YearsWithCurrManager >= 0,
+                                 YearsInCurrentRole  >=0,
+                                 YearsAtCompany >= 0,
+                                 StockOptionLevel >= 0,
+                                 MonthlyIncome <= 13500,
+                                 JobLevel >= 1)
+
+1076+157+237
+
+a <- nrow(Cat_Green)
+b <- nrow(Cat_Yellow)
+c <- nrow(Cat_Red)
+
+percent(1076/1470)
+percent(157/1470)
+percent(237/1470)
+  
+All_Category <- c("Retained 73%" = a, "At Risk 11%" = b, "Attrited 16%" = c)
+pie3D(All_Category,
+      col=c("green", "yellow", "red"),
+      labels = names(All_Category),
+      radius=0.71,
+      height = .2,
+      labelcex = .70,
+      explode=0.2,
+      theta = .9,
+      main=" IBM Employee Retention Breakdown") 
+  
+table(Cat_Green$JobLevel)
+table(Cat_Green$JobRole)
+JR <- Cat_Green %>% group_by(Cat_Green$JobLevel, Cat_Green$JobRole) %>% summarise(Freq=n())
+JR2 <- JR[order(-JR$Freq), ]
+view(JR2)
+
+table(Cat_Yellow$JobLevel)
+table(Cat_Yellow$JobRole)
+AR <- Cat_Yellow %>% group_by(Cat_Yellow$JobLevel, Cat_Yellow$JobRole) %>% summarise(Freq=n())
+AR2 <- AR[order(-AR$Freq), ]
+view(AR2)
+
+df3 <- as_tibble(JR2)
+colnames(df3) <- c("Joblevel", "JobRole", "Freq")
+df3 <- df3[order(-df3$Freq), ]
+df3 <- df3 %>% rownames_to_column(var = "key")
+df4 <- as_tibble(AR2)
+colnames(df4) <- c("Joblevel", "JobRole", "Freq")
+df4 <- df4[order(-df4$Freq), ]
+df4 <- df4 %>% rownames_to_column(var = "key")
+df_compare1 <- full_join(df3, df4, by = "key")
+colnames(df_compare1) <- c("Sequence", "RetainedLevel", "Retained Title ", "Retained", "AtRiskLevel", "At Risk Title", "At Risk")
+df_compare1 = subset(df_compare1, select = -c(Sequence, RetainedLevel, AtRiskLevel) )
+  
+df_compare1 %>%
+  gt()%>%
+  tab_header(
+    title = md("**Retained vs. At Risk Employees Comparision**"),
+    subtitle = md("Unpacking IBM HR Analytics Employee Attrition & Retention")
+  ) %>%
+  cols_width(
+    everything() ~ px(100)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+  
+v <- tibble("Research Scientist Level 1" = percent(61/189), 
+            "Lab. Tech. Level 1" = percent(39/144),
+            "Sales Rep. Level 1" = percent(22/44))
+v %>%
+  gt()%>%
+  tab_header(
+    title = md("**Top 3 At-Risk Jobs by %**"),
+    subtitle = md("Unpacking IBM HR Analytics Employee Attrition & Retention")
+  ) %>%
+  opt_align_table_header(align = "center") %>%
+  cols_width(
+    everything() ~ px(135)) %>% 
+  tab_source_note(source_note = md(
+    "Portions of this data is from the Reference Section.
+    Manu. Dir. is  a Manufacturing Director")) %>%
+  opt_table_font(font = ("Times New Roman"),
+                 weight = 300)  %>%
+  cols_align(
+    align = "center",
+    columns = everything())
+  
+## 5.2 **Testing a Model to Retain At Risk Employees**
+
+### 5.2.1 **Adjust Stock Option**
+  
+table(Cat_Yellow$StockOptionLevel)
+  
+RetainatRisk <- Cat_Yellow
+RetainatRisk$StockOptionLevel <-replace(RetainatRisk$StockOptionLevel, RetainatRisk$StockOptionLevel == 1, 2)
+RetainatRisk$StockOptionLevel <-replace(RetainatRisk$StockOptionLevel, RetainatRisk$StockOptionLevel == 0, 1)
+table(RetainatRisk$StockOptionLevel)
+  
+
+### 5.2.2  **Adjusting Income**
+  
+table(Cat_Yellow$StockOptionLevel)
+n <- Cat_Green[which(Cat_Green$JobRole == "Sales Representative"
+), ]
+mean(n$MonthlyIncome)
+mean(n$YearsAtCompany)
+mean(n$YearsInCurrentRole)
+
+w <- Cat_Yellow[which(Cat_Yellow$JobRole == "Sales Representative"
+), ]
+mean(w$MonthlyIncome)
+mean(w$YearsAtCompany)
+mean(w$YearsInCurrentRole)
+
+z <- RetainatRisk %>% filter(
+  JobRole == "Sales Representative",
+  MonthlyIncome >= 2798.44)
+nrow(z)
+z
+
+RetainatRisk$MonthlyIncome <- ifelse(RetainatRisk$JobRole == "Sales Representative", RetainatRisk$MonthlyIncome*.30+839, RetainatRisk$MonthlyIncome)
+
+view(RetainatRisk)
+
+a <- RetainatRisk %>% filter(Age <= 37,
+                             Attrition == "No",
+                             YearsWithCurrManager <= 2,
+                             YearsInCurrentRole <= 4,
+                             YearsAtCompany <= 7,
+                             StockOptionLevel <= 1,
+                             MonthlyIncome < 6502.931,
+                             JobLevel <= 2,
+                             BusinessTravel == "Travel_Rarely")
+  
+  
+nrow(a)
+  
+a <- 1148
+b <- 85
+c <- 237
+
+Update_Category <- c("Retained 78%" = a, "At Risk 6%" = b, "Attrited 16%" = c)
+pie3D(Update_Category,
+      col=c("green", "yellow", "red"),
+      labels = names(Update_Category),
+      radius=0.71,
+      height = .2,
+      labelcex = .70,
+      explode=0.2,
+      theta = .9,
+      main=" Update IBM Employee Retention Model")
+
+n <- Cat_Green[which(Cat_Green$JobRole == "Research Scientist"
+), ]
+mean(n$MonthlyIncome)
+mean(n$YearsAtCompany)
+mean(n$YearsInCurrentRole)
+
+w <- Cat_Yellow[which(Cat_Yellow$JobRole == "Research Scientist"
+), ]
+mean(w$MonthlyIncome)
+mean(w$YearsAtCompany)
+mean(w$YearsInCurrentRole)
+
+z <- RetainatRisk %>% filter(
+  JobRole == "Research Scientist",
+  MonthlyIncome >= 3328.122)
+nrow(z)
+
+.10*3328.122
+
+RetainatRisk$MonthlyIncome <- ifelse(RetainatRisk$JobRole == "Research Scientist", RetainatRisk$MonthlyIncome*.10+332.8122, RetainatRisk$MonthlyIncome)
+  
+  
+a <- RetainatRisk %>% filter(Age <= 37,
+                             Attrition == "No",
+                             YearsWithCurrManager <= 2,
+                             YearsInCurrentRole <= 4,
+                             YearsAtCompany <= 7,
+                             StockOptionLevel <= 1,
+                             MonthlyIncome < 6502.931,
+                             JobLevel <= 2,
+                             BusinessTravel == "Travel_Rarely")
+  
+  
+nrow(a)
+  
+
+### 5.2.3  **Adjusting Stock Option Level for Research Scientist**
+  
+RetainatRisk$StockOptionLevel <- ifelse(RetainatRisk$JobRole == "Research Scientist", RetainatRisk$StockOptionLevel <- 2, RetainatRisk$StockOptionLevel)
+  
+  
+a <- RetainatRisk %>% filter(Age <= 37,
+                             Attrition == "No",
+                             YearsWithCurrManager <= 2,
+                             YearsInCurrentRole <= 4,
+                             YearsAtCompany <= 7,
+                             StockOptionLevel <= 1,
+                             MonthlyIncome < 6502.931,
+                             JobLevel <= 2,
+                             BusinessTravel == "Travel_Rarely")
+  
+  
+nrow(a)
+  
+## 6. **Results**
+  
+b <- 1233
+c <- 237
+  
+  
+Final_Model <- c("Retained 84%" = b, "Attrited 16%" = c)
+pie3D(Final_Model,
+      col=c("green", "red"),
+      labels = names(Final_Model),
+      radius=0.58,
+      height = .2,
+      labelcex = .70,
+      explode=0.2,
+      theta = .9,
+      main=" IBM Employee Retention Final Model") 
+
+
+# 7. **Conclusion**
+
+# 8. **IBM Data Set Glossary and Terminology:** 
+
+# 1. age	numerical value
+# 1. attrition	employee leaving the company (0=no, 1=yes)
+# 1. business travel	(1=no travel, 2=travel frequently, 3=tavel rarely)
+# 1. daily rate	numerical value - salary level
+# 1. department	(1=hr, 2=r&d, 3=sales)
+# 1. distance from home	numerical value - the distance from work to home
+# 1. education	numerical value
+# 1. education field	(1=hr, 2=life sciences, 3=marketing, 4=medical sciences, 5=others, 6= tehcnical)
+# 1. employee count	numerical value
+# 1. employee number	numerical value - employee id
+# 1. enviroment satisfaction	numerical value - satisfaction with the enviroment
+# 1. gender	(1=female, 2=male)
+# 1. hourly rate	numerical value - hourly salary
+# 1. job involvement	numerical value - job involvement
+# 1. job level	numerical value - level of job
+# 1. job role	(1=hc rep, 2=hr, 3=lab technician, 4=manager, 5= managing director, 6= reasearch director, 7= research scientist, 8=sales executieve, 9= sales representative)
+# 1. job satisfaction	numerical value - satisfaction with the job
+# 1. marital status	(1=divorced, 2=married, 3=single)
+# 1. monthly income	numerical value - monthly salary
+# 1. monthy rate	numerical value - monthly rate
+# 1. numcompanies worked	numerical value - no. of companies worked at
+# 1. over 18	(1=yes, 2=no)
+# 1. overtime	(1=no, 2=yes)
+# 1. percent salary hike	numerical value - percentage increase in salary
+# 1. performance rating	numerical value - erformance rating
+# 1. relations satisfaction	numerical value - relations satisfaction
+# 1. standard hours	numerical value - standard hours
+# 1. stock options level	numerical value - stock options
+# 1. total working years	numerical value - total years worked
+# 1. training times last year	numerical value - hours spent training
+# 1. work life balance	numerical value - time spent bewtween work and outside
+# 1. years at company	numerical value - total number of years at the compnay
+# 1. years in current role	numerical value -years in current role
+# 1. years since last promotion	numerical value - last promotion
+#1. years with current manager	numerical value - years spent with current manager
+
+# 1. Education
+
+#a.  Below College
+#b.  College 
+#c.  Bachelor 
+#d.  Master 
+#e.  Doctor 
+
+# 1. Environment Satisfaction
+
+#a.  Low 
+#b.  Medium 
+#c.  High 
+#d.  Very High 
+
+# 1. Job Involvement
+
+#a.  Low 
+#b.  Medium 
+#c.  High 
+#d.  Very High 
+
+# 1. Job Satisfaction
+
+#a.  Low 
+#b.  Medium 
+#c.  High 
+#d.  Very High 
+
+# 1. Performance Rating
+
+#a.  Low 
+#b.  Good 
+#c.  Excellent 
+#d.  Outstanding 
+
+# 1. Relationship Satisfaction
+
+#a.  Low 
+#b.  Medium 
+#c.  High 
+#d.  Very High 
+
+# 1. Work Life Balance
+# a.  Bad 
+# b.  Good 
+# c.  Better 
+# d.  Best 
+
+
+# 9. **Reference Section:**
+
+#1. Irizarry, R. A. (2022, July 7). Introduction to Data Science. HARVARD Data Science. Retrieved August 8, 2022, from Https://rafalab.github.io/dsbook/
+#  This project utilized "Introduction to Data Science Data Analysis and Prediction Algorithms with R" by our course instructor Rafael A. Irizarry published 2022-07-07.
+
+#1. Kaggle: Your Home for Data Science. (n.d.). Retrieved October 30, 2022, from https://www.kaggle.com/data+sets/pavansubhasht/ibm-hr-analytics-attrition-data+set
+
+#1. Jain, R. A. F.-. R. S. (n.d.). IBM HR Analytics Employee Attrition & Performance. Retrieved October 30, 2022, from https://inseaddataanalytics.github.io/INSEADAnalytics/groupprojects/January2018FBL/IBM_Attrition_VSS.html
+
+#1. Industries with the Highest (and Lowest) Turnover Rates. (n.d.). Retrieved October 30, 2022, from https://www.linkedin.com/business/talent/blog/talent-strategy/industries-with-the-highest-turnover-rates
